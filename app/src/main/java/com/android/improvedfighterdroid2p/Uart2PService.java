@@ -69,29 +69,8 @@ public class Uart2PService extends Service {
     private boolean holdSTART = false;
 
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
-
-    public static final byte[] queryCommand = buildQueryCommand();
-
-    public static byte[] buildQueryCommand() {
-        byte[] bArr = new byte[3];
-        for (int i6 = 0; i6 < 6; i6 += 2) {
-            bArr[i6 / 2] = (byte) (hex2Dec("A60100".charAt(i6 + 1)) + (hex2Dec("A60100".charAt(i6)) * 16));
-        }
-        return bArr;
-    }
-
-    public static int hex2Dec(char c) {
-        if ('0' > c || c > '9') {
-            char c6 = 'a';
-            if ('A' <= c && c <= 'F') {
-                c6 = 'A';
-            } else if ('a' > c || c > 'f') {
-                return -1;
-            }
-            return (c - c6) + 10;
-        }
-        return c - '0';
-    }
+    
+    public static final byte[] queryCommand = { (byte) 0xA6, (byte) 0x01, (byte) 0x00 };
 
     @Override // android.app.Service
     public IBinder onBind(Intent intent) {
@@ -208,7 +187,7 @@ public class Uart2PService extends Service {
     }
 
     public final void writeUmidokey(byte[] serialBytes) {
-        // the first 4 bytes should be 'A710'
+        // the first 2 bytes should be 'A710'
         if (serialBytes[0] != (byte) 0xA7 || serialBytes[1] != (byte) 0x10) return;
 
         bufferUmidokey[0]  = byte2char[serialBytes[4] & 255][0];
