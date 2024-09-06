@@ -17,7 +17,7 @@ After installing the app, you must use adb and type the following commands:
 
 ```
 adb shell pm disable-user --user 0 com.fjtech.ComAssistant
-adb pm disable-user --user 0 com.bjw.ComAssistant
+adb shell pm disable-user --user 0 com.bjw.ComAssistant
 ```
 The first two commands will disable the native drivers (but not remove them!), then just start the app. Notice that the joysticks will stop working when you disable the native drivers and they will work again once you start ImprovedFighterDroid2P.
 
