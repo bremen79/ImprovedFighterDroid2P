@@ -69,7 +69,7 @@ public class Uart2PService extends Service {
     private boolean holdSTART = false;
 
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
-    
+
     public static final byte[] queryCommand = { (byte) 0xA6, (byte) 0x01, (byte) 0x00 };
 
     @Override // android.app.Service
@@ -143,8 +143,8 @@ public class Uart2PService extends Service {
     }
 
     private void readSerialPort(){
-        Log.d("Bremen79", "Trying to open serial port");
         try {
+            Log.d("Bremen79", "Trying to open serial port");
             serialPort = new SerialPort(new File("/dev/ttyS1"));
             Log.d("Bremen79", "Serial port opened");
             Log.d("Bremen79", "Trying to open umidokey device");
