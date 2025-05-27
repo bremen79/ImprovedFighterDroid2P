@@ -45,18 +45,30 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Bremen79", "Service not running");
             Intent serviceIntent = new Intent(this, Uart2PService.class);
             Log.i("Bremen79", "Starting service");
-            Toast.makeText(this, "ImprovedFighterDroid2P started.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "ImprovedFighterDroid2P started", Toast.LENGTH_SHORT).show();
             ContextCompat.startForegroundService(this, serviceIntent);
         } else {
             Log.i("Bremen79", "Service already running");
-            Toast.makeText(this, "ImprovedFighterDroid2P is already running.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "ImprovedFighterDroid2P is already running", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void stopService() {
+        if (!isMyServiceRunning(Uart2PService.class)) {
+            Log.i("Bremen79", "Service not running");
+        } else {
+            Log.i("Bremen79", "Service running");
+            Intent serviceIntent = new Intent(this, Uart2PService.class);
+            Log.i("Bremen79", "Stopping service");
+            Toast.makeText(this, "ImprovedFighterDroid2P started", Toast.LENGTH_SHORT).show();
+            stopService(serviceIntent);
+            Toast.makeText(this, "ImprovedFighterDroid2P stopped", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void showPopup() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        Log.i("Bremen79", "Creating dialog");
         builder.setTitle("App Action");
         builder.setMessage("Do you want to install or uninstall the app?");
 
@@ -75,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int id) {
                 Log.i("Bremen79", "Clicked uninstall");
                 enablePackages();
+                stopService();
                 finish();
             }
         });
@@ -90,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
 
         //AlertDialog dialog = builder.create();
 
-        Log.i("Bremen79", "Showing dialog");
         builder.show();
     }
 
@@ -116,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Failed to enable " + pkg + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
+        Toast.makeText(this, "Restart the machine", Toast.LENGTH_SHORT).show();
     }
 
     // https://stackoverflow.com/questions/600207/how-to-check-if-a-service-is-running-on-android/5921190#5921190

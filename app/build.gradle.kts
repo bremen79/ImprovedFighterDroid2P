@@ -21,8 +21,8 @@ android {
         applicationId = "com.android.improvedfighterdroid2p"
         minSdk = 24
         targetSdk = 33
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,6 +50,7 @@ android {
             buildConfigField("int", "P5_KEY", "147")
             buildConfigField("int", "P6_KEY", "161")
             buildConfigField("int", "START_KEY", "158")
+            buildConfigField("int", "HOME_KEY", "3")
         }
         create("retrox") {
             dimension = "keys"
@@ -69,6 +70,7 @@ android {
             buildConfigField("int", "P5_KEY", "147")
             buildConfigField("int", "P6_KEY", "161")
             buildConfigField("int", "START_KEY", "158")
+            buildConfigField("int", "HOME_KEY", "3")
         }
     }
 

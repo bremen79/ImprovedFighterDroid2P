@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.hardware.input.InputManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
@@ -26,6 +27,8 @@ import java.lang.reflect.Method;
 import android_serialport_api.SerialPort;
 
 public class Uart2PService extends Service {
+
+    private Handler handler = null;
     private long clock = SystemClock.uptimeMillis();
     //private long previousClock = SystemClock.uptimeMillis();
     private SerialPort serialPort = null;
@@ -67,6 +70,7 @@ public class Uart2PService extends Service {
     private boolean holdP5 = false;
     private boolean holdP6 = false;
     private boolean holdSTART = false;
+    private boolean holdHOME = false;
 
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
 
@@ -92,6 +96,8 @@ public class Uart2PService extends Service {
             inputManager = getInstanceMethod.invoke(null);
             // Get the injectInputEvent method
             injectInputEventMethod = inputManagerClass.getMethod("injectInputEvent", InputEvent.class, int.class);
+
+            handler = new Handler();
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
                  InvocationTargetException e) {
             e.printStackTrace();
@@ -213,13 +219,33 @@ public class Uart2PService extends Service {
 
         try {
             fileOutputStreamUmidokey.write(bufferUmidokey, 0, 14);
+            //Log.d("Bremen79", String.format("%d %d %d %d %d %d", serialBytes[0], serialBytes[1], serialBytes[2], serialBytes[3], serialBytes[4], serialBytes[5]));
+            if ((serialBytes[4] & 16)!=0) {
+                if (!holdHOME) {
+                    //Log.d("Bremen79", "HOME key timer started");
+                    holdHOME = true;
+                    handler.postDelayed(mLongPressed, 3000);
+                }
+            } else if (holdHOME) {
+                //Log.d("Bremen79", "HOME key timer stopped");
+                holdHOME = false;
+                handler.removeCallbacks(mLongPressed);
+            }
             emulateP2(serialBytes[8], serialBytes[9]);
         } catch (Exception e2) {
             e2.toString();
         }
     }
 
-
+    private Runnable mLongPressed = new Runnable() {
+        public void run() {
+            //Log.d("Bremen79", "Sending HOME key event");
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        }
+    };
     private void emulateP2(byte i, byte i2) {
         //Log.d("Bremen79", String.format("%d %d %d %d %d %d %d %d %d %d", bArr[0], bArr[1], bArr[2], bArr[3], bArr[4],bArr[5], bArr[6], bArr[7], bArr[8], bArr[9]));
         //Log.d("Bremen79", String.format("%d %d", i, i2));
