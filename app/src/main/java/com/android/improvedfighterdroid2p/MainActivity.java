@@ -45,8 +45,8 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Bremen79", "Service not running");
             Intent serviceIntent = new Intent(this, Uart2PService.class);
             Log.i("Bremen79", "Starting service");
-            Toast.makeText(this, "ImprovedFighterDroid2P started", Toast.LENGTH_SHORT).show();
             ContextCompat.startForegroundService(this, serviceIntent);
+            Toast.makeText(this, "ImprovedFighterDroid2P started", Toast.LENGTH_SHORT).show();
         } else {
             Log.i("Bremen79", "Service already running");
             Toast.makeText(this, "ImprovedFighterDroid2P is already running", Toast.LENGTH_SHORT).show();
@@ -60,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Bremen79", "Service running");
             Intent serviceIntent = new Intent(this, Uart2PService.class);
             Log.i("Bremen79", "Stopping service");
-            Toast.makeText(this, "ImprovedFighterDroid2P started", Toast.LENGTH_SHORT).show();
             stopService(serviceIntent);
             Toast.makeText(this, "ImprovedFighterDroid2P stopped", Toast.LENGTH_SHORT).show();
         }
@@ -70,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
         builder.setTitle("App Action");
-        builder.setMessage("Do you want to install or uninstall the app?");
+        builder.setMessage("Do you want to install or uninstall ImprovedFighterDroid2P?");
 
         builder.setPositiveButton("Install", new DialogInterface.OnClickListener() {
             @Override

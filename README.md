@@ -1,11 +1,18 @@
 # ImprovedFighterDroid2P
 
-This Android app allows to use the second joystick (and its buttons) on the Arcade1up Yoga Flame cabinet.
+This Android app does three things:
+
+- It allows to use the second joystick (and its buttons) on the Arcade1up Yoga Flame cabinet.
+
+- It reduces the delay of both joysticks.
+
+- It maps the long press of the Live button to the button HOME.
+
 It works by *replacing* the native driver and associating the second joystick and its buttons to the keys of a virtual keyboard.
 
-This is an improved version of my app [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P): Instead of adding an app to query the state of the joystick, I directly rewrote the native driver so that they also encode the second joystick. This has a couple of advantages. First, in my other app the native driver and my app were both reading from the same read-once input, causing possible problems. Second, the native driver is poorly coded. So, now only one read of the serial port is used for both the native driver and the second joystick. Moeover, I spent some time (with the help of ChatGPT!) to optimize the code. Overall, this should be faster and safer.
+# Why a New App?
 
-Note that this app is intended for expert users: You must use adb to install it.
+This is an improved version of my app [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P): Instead of adding an app to query the state of the joystick, I directly rewrote the native driver so that it also encodes the second joystick. This has a couple of advantages. First, in my other app the native driver and my app were both reading from the same read-once input, causing possible problems. So, now only one read of the serial port is used for both the native driver and the second joystick. Second, the native driver is poorly coded and my implementation reduces the delays. Finally, it maps the long press of the Live button to HOME, so you do not need to install yet another app to do it.
 
 # Disclaimer
 
@@ -13,29 +20,13 @@ This software is provided "as-is," without any express or implied warranty. The 
 
 # Installation
 
-After installing the app, you must use adb and type the following commands:
+After installing the app, run it once. It will prompt you to *Install* or *Uninstall*.
 
-```
-adb shell pm disable-user --user 0 com.fjtech.ComAssistant
-adb shell pm disable-user --user 0 com.bjw.ComAssistant
-```
-The first two commands will disable the native drivers (but not remove them!), then just start the app. Notice that the joysticks will stop working when you disable the native drivers and they will work again once you start ImprovedFighterDroid2P.
+*Install* will disable the native drivers (but not remove them!), and it will enable the new driver. The new driver will automatically starts itself after each boot.
 
-The new driver will automatically starts itself after each boot.
-
-# How to uninstall
-
-To uninstall the app, you can simply remove it. However, you also have to re-enable to native drivers.
-So, you have to run following adb commands:
-
-```
-adb shell pm enable --user 0 com.fjtech.ComAssistant
-adb shell pm enable --user 0 com.bjw.ComAssistant
-```
-Then, reboot the machine.
+*Uninstall* will re-enable the native drivers and disable the app then you just have to reboot the cabinet.
 
 # Acknowledgments
-
 This app is based on the same idea used by [The Code Always Wins](https://www.youtube.com/c/thecodealwayswins) to replace the native driver with a faster one. Here, I use the same approach to poll the ports, but I use the same ``adaptive sleep'' I used in my [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P) to be sure that the app runs every 16ms.
 
 The serial port code is from the Team Encoder code at https://github.com/Team-Encoder/A1AndroidControlFix.
