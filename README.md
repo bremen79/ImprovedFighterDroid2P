@@ -28,7 +28,7 @@ After installing the app, run it once. It will prompt you to *Install* or *Unins
 
 # History
 
-1.0.0: First public release
+1.0.0: First public release  
 1.1.0: Added mapping of long press Live button to HOME
 
 # Acknowledgments
