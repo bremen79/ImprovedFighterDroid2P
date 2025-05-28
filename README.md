@@ -26,6 +26,11 @@ After installing the app, run it once. It will prompt you to *Install* or *Unins
 
 *Uninstall* will re-enable the native drivers and disable the app then you just have to reboot the cabinet.
 
+# History
+
+1.0.0: First public release
+1.1.0: Added mapping of long press Live button to HOME
+
 # Acknowledgments
 This app is based on the same idea used by [The Code Always Wins](https://www.youtube.com/c/thecodealwayswins) to replace the native driver with a faster one. Here, I use the same approach to poll the ports, but I use the same ``adaptive sleep'' I used in my [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P) to be sure that the app runs every 16ms.
 
