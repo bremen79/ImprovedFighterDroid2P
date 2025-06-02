@@ -6,7 +6,7 @@ This Android app does three things:
 
 - It reduces the delay of both joysticks.
 
-- It maps the long press of the Live button to the button HOME.
+- It maps the long press (3 seconds) of the Live button to the button HOME.
 
 It works by *replacing* the native driver and associating the second joystick and its buttons to the keys of a virtual keyboard.
 
