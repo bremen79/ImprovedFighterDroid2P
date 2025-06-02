@@ -368,17 +368,14 @@ public class Uart2PService extends Service {
         try {
             if (fileInputStreamSerial != null) {
                 fileInputStreamSerial.close();
-                fileInputStreamSerial = null;
                 Log.d("Bremen79", "Closed input serial");
             }
             if (fileOutputStreamSerial!= null) {
                 fileOutputStreamSerial.close();
-                fileOutputStreamSerial = null;
                 Log.d("Bremen79", "Closed output serial");
             }
             if (fileOutputStreamUmidokey!= null) {
                 fileOutputStreamUmidokey.close();
-                fileOutputStreamUmidokey = null;
                 Log.d("Bremen79", "Closed output umidokey");
             }
         } catch (Exception ignored) {

@@ -12,13 +12,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.content.pm.PackageManager;
 import android.widget.Toast;
 
 import java.util.Iterator;
-
-import android.hardware.input.InputManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,11 +48,14 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Bremen79", "Service already running");
             Toast.makeText(this, "ImprovedFighterDroid2P is already running", Toast.LENGTH_SHORT).show();
         }
+        //packageManager.setApplicationEnabledSetting("com.android.improvedfighterdroid2p", PackageManager.COMPONENT_ENABLED_STATE_ENABLED,0);
+        //Toast.makeText(this, "Enabled autostart of ImprovedFighterDroid2P", Toast.LENGTH_SHORT).show();
     }
 
     private void stopService() {
         if (!isMyServiceRunning(Uart2PService.class)) {
             Log.i("Bremen79", "Service not running");
+            Toast.makeText(this, "ImprovedFighterDroid2P is already stopped", Toast.LENGTH_SHORT).show();
         } else {
             Log.i("Bremen79", "Service running");
             Intent serviceIntent = new Intent(this, Uart2PService.class);
@@ -63,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
             stopService(serviceIntent);
             Toast.makeText(this, "ImprovedFighterDroid2P stopped", Toast.LENGTH_SHORT).show();
         }
+        //packageManager.setApplicationEnabledSetting("com.android.improvedfighterdroid2p", PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER,0);
+        //Toast.makeText(this, "Removed autostart of ImprovedFighterDroid2P", Toast.LENGTH_SHORT).show();
     }
 
     private void showPopup() {
@@ -85,8 +87,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 Log.i("Bremen79", "Clicked uninstall");
-                enablePackages();
                 stopService();
+                enablePackages();
                 finish();
             }
         });
@@ -95,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int id) {
                 Log.i("Bremen79", "Clicked cancel");
-                dialog.dismiss();
                 finish();
             }
         });
@@ -111,8 +112,10 @@ public class MainActivity extends AppCompatActivity {
             try {
                 packageManager.setApplicationEnabledSetting(pkg, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER, 0);
                 Toast.makeText(this, "Disabled " + pkg, Toast.LENGTH_SHORT).show();
+                Log.i("Bremen79", "Disabled " + pkg);
             } catch (Exception e) {
                 Toast.makeText(this, "Failed to disable " + pkg + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
+                Log.i("Bremen79", "Failed to disabled " + pkg);
             }
         }
     }
@@ -123,11 +126,13 @@ public class MainActivity extends AppCompatActivity {
             try {
                 packageManager.setApplicationEnabledSetting(pkg, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
                 Toast.makeText(this, "Enabled " + pkg, Toast.LENGTH_SHORT).show();
+                Log.i("Bremen79", "Enabled " + pkg);
             } catch (Exception e) {
                 Toast.makeText(this, "Failed to enable " + pkg + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
+                Log.i("Bremen79", "Failed to enable " + pkg);
             }
         }
-        Toast.makeText(this, "Restart the machine", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Uninstall the app and restart the machine", Toast.LENGTH_SHORT).show();
     }
 
     // https://stackoverflow.com/questions/600207/how-to-check-if-a-service-is-running-on-android/5921190#5921190
