@@ -12,13 +12,15 @@ It works by *replacing* the native driver and associating the second joystick an
 
 # Why a New App?
 
-This is an improved version of my app [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P): Instead of adding an app to query the state of the joystick, I directly rewrote the native driver so that it also encodes the second joystick. This has a couple of advantages. First, in my other app the native driver and my app were both reading from the same read-once input, causing possible problems. So, now only one read of the serial port is used for both the native driver and the second joystick. Second, the native driver is poorly coded and my implementation reduces the delays. Finally, it maps the long press of the Live button to HOME, so you do not need to install yet another app to do it.
+This is an improved version of my app [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P): Instead of adding an app to query the state of the joystick, I directly rewrote the native driver so that it also encodes the second joystick. This has a couple of advantages. First, in my other app the native driver and my app were both reading from the same read-once input, causing possible problems. So, now only one read of the serial port is used for both the native driver and the second joystick. Second, the native driver is poorly coded and my implementation reduces the delays even for player 1. Finally, it maps the long press of the Live button to HOME, so you do not need to install yet another app to do it.
 
 # Disclaimer
 
 This software is provided "as-is," without any express or implied warranty. The author(s) of this software shall not be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
 
 # Installation and Uninstallation
+
+First of all, this app is not compatible with the input lag fix by [The Code Always Wins](https://www.youtube.com/c/thecodealwayswins). If you have it, first you must disinstall it. This app includes the input lag fix, so you won't need other apps for that.
 
 After installing the app, run it once. It will prompt you to *Install* or *Uninstall*.
 
