@@ -18,13 +18,13 @@ This is an improved version of my app [FighterDroid2P app](https://github.com/br
 
 This software is provided "as-is," without any express or implied warranty. The author(s) of this software shall not be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
 
-# Installation
+# Installation and Uninstallation
 
 After installing the app, run it once. It will prompt you to *Install* or *Uninstall*.
 
 *Install* will disable the native drivers (but not remove them!), and it will enable the new driver. The new driver will automatically starts itself after each boot.
 
-*Uninstall* will re-enable the native drivers and disable the app then you just have to reboot the cabinet.
+*Uninstall* will re-enable the native drivers and stop the app. Then, you must disinstall the app and reboot the cabinet, and the native driver will work as before.
 
 # History
 
