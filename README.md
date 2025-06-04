@@ -22,6 +22,8 @@ This software is provided "as-is," without any express or implied warranty. The 
 
 First of all, this app is not compatible with the input lag fix by [The Code Always Wins](https://www.youtube.com/c/thecodealwayswins). If you have it, first you must disinstall it. This app includes the input lag fix, so you won't need other apps for that.
 
+You should also remove my other app, FigtherDroid2P, and the Buttons Remapper app.
+
 After installing the app, run it once. It will prompt you to *Install* or *Uninstall*.
 
 *Install* will disable the native drivers (but not remove them!), and it will enable the new driver. The new driver will automatically starts itself after each boot.
