@@ -14,7 +14,7 @@ It works by *replacing* the native driver and associating the second joystick an
 
 # Why a New App?
 
-This is an improved version of my app [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P): Instead of adding an app to query the state of the joystick, I directly rewrote the native driver so that it also encodes the second joystick. This has a couple of advantages. First, in my other app the native driver and my app were both reading from the same read-once input, causing possible problems. So, now only one read of the serial port is used for both the native driver and the second joystick. Second, the native driver is poorly coded and my implementation reduces the delays. Finally, it maps the long press of the Live button to HOME, so you do not need to install yet another app to do it. It also maps the long press of the P2 button to finish all writing operations, for a safe shutdown.
+This is an improved version of my app [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P): Instead of adding an app to query the state of the joystick, I directly rewrote the native driver so that it also encodes the second joystick. This has a couple of advantages. First, in my other app the native driver and my app were both reading from the same read-once input, causing possible problems. So, now only one read of the serial port is used for both the native driver and the second joystick. Second, the native driver is poorly coded and my implementation reduces the delays even for player 1. Finally, it maps the long press of the Live button to HOME, so you do not need to install yet another app to do it. It also maps the long press of the P2 button to finish all writing operations, for a safe shutdown.
 
 # Disclaimer
 
@@ -33,13 +33,17 @@ The script uses `JAVA_HOME` if set, or the installed JDK at `~/.jdks/jbr-17.0.12
 when available. Set `JAVA_HOME` to a JDK 17 installation if needed.
 Additional arguments are passed to Gradle, for example `./build.sh --offline`.
 
-# Installation
+# Installation and Uninstallation
+
+First of all, this app is not compatible with the input lag fix by [The Code Always Wins](https://www.youtube.com/c/thecodealwayswins). If you have it, my code will disable it. This app includes the input lag fix, so you won't need other apps for that.
+
+You should also remove my other app, FigtherDroid2P, and the Buttons Remapper app.
 
 After installing the app, run it once. It will prompt you to *Install* or *Uninstall*.
 
 *Install* will disable the native drivers (but not remove them!), and it will enable the new driver. The new driver will automatically starts itself after each boot.
 
-*Uninstall* will re-enable the native drivers and disable the app then you just have to reboot the cabinet.
+*Uninstall* will re-enable the native drivers and stop the app. Then, you must disinstall the app and reboot the cabinet, and the native driver will work as before.
 
 # History
 
