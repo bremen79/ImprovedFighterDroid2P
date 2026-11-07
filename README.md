@@ -8,15 +8,30 @@ This Android app does three things:
 
 - It maps the long press (3 seconds) of the Live button to the button HOME.
 
+- It maps the long press (3 seconds) of the P2 button to finish all writing operations, for a safe shutdown.
+
 It works by *replacing* the native driver and associating the second joystick and its buttons to the keys of a virtual keyboard.
 
 # Why a New App?
 
-This is an improved version of my app [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P): Instead of adding an app to query the state of the joystick, I directly rewrote the native driver so that it also encodes the second joystick. This has a couple of advantages. First, in my other app the native driver and my app were both reading from the same read-once input, causing possible problems. So, now only one read of the serial port is used for both the native driver and the second joystick. Second, the native driver is poorly coded and my implementation reduces the delays. Finally, it maps the long press of the Live button to HOME, so you do not need to install yet another app to do it.
+This is an improved version of my app [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P): Instead of adding an app to query the state of the joystick, I directly rewrote the native driver so that it also encodes the second joystick. This has a couple of advantages. First, in my other app the native driver and my app were both reading from the same read-once input, causing possible problems. So, now only one read of the serial port is used for both the native driver and the second joystick. Second, the native driver is poorly coded and my implementation reduces the delays. Finally, it maps the long press of the Live button to HOME, so you do not need to install yet another app to do it. It also maps the long press of the P2 button to finish all writing operations, for a safe shutdown.
 
 # Disclaimer
 
 This software is provided "as-is," without any express or implied warranty. The author(s) of this software shall not be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
+
+# Building
+
+With the Android SDK and NDK installed, run:
+
+```sh
+./build.sh
+```
+
+This builds unsigned release APKs for both RetroArch and RetroX and prints their paths.
+The script uses `JAVA_HOME` if set, or the installed JDK at `~/.jdks/jbr-17.0.12`
+when available. Set `JAVA_HOME` to a JDK 17 installation if needed.
+Additional arguments are passed to Gradle, for example `./build.sh --offline`.
 
 # Installation
 
@@ -30,6 +45,8 @@ After installing the app, run it once. It will prompt you to *Install* or *Unins
 
 1.0.0: First public release  
 1.1.0: Removed the need to use adb to install and unistall, added mapping of long press Live button to HOME
+1.2.0: Added mapping of long press P2 button to sync, fixed potential issues in reading, closing, joystick reads, reduced size apk, various optimizations
+
 
 # Acknowledgments
 This app is based on the same idea used by [The Code Always Wins](https://www.youtube.com/c/thecodealwayswins) to replace the native driver with a faster one. Here, I use the same approach to poll the ports, but I use the same ``adaptive sleep'' I used in my [FighterDroid2P app](https://github.com/bremen79/FighterDroid2P) to be sure that the app runs every 16ms.

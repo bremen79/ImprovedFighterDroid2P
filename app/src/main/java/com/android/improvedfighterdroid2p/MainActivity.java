@@ -1,8 +1,7 @@
 package com.android.improvedfighterdroid2p;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import android.app.Activity;
+import android.os.Build;
 
 import android.Manifest;
 import android.app.ActivityManager;
@@ -17,7 +16,7 @@ import android.widget.Toast;
 
 import java.util.Iterator;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     private static final int PERMISSION_REQUEST_CODE = 1;
     private PackageManager packageManager;
@@ -26,9 +25,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             // Permission is not granted, request it
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
         }
 
         packageManager = getPackageManager();
@@ -42,7 +41,11 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Bremen79", "Service not running");
             Intent serviceIntent = new Intent(this, Uart2PService.class);
             Log.i("Bremen79", "Starting service");
-            ContextCompat.startForegroundService(this, serviceIntent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
             Toast.makeText(this, "ImprovedFighterDroid2P started", Toast.LENGTH_SHORT).show();
         } else {
             Log.i("Bremen79", "Service already running");
@@ -107,14 +110,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void disablePackages() {
-        String[] packages = {"com.fjtech.ComAssistant", "com.bjw.ComAssistant"};
+        String[] packages = {"com.android.SimpsonsControllerFix", "com.fjtech.ComAssistant",
+                "com.bjw.ComAssistant", "com.tcaw.FinalBurnDelta"};
         for (String pkg : packages) {
             try {
                 packageManager.setApplicationEnabledSetting(pkg, PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER, 0);
                 Toast.makeText(this, "Disabled " + pkg, Toast.LENGTH_SHORT).show();
                 Log.i("Bremen79", "Disabled " + pkg);
             } catch (Exception e) {
-                Toast.makeText(this, "Failed to disable " + pkg + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
+                //Toast.makeText(this, "Failed to disable " + pkg + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
                 Log.i("Bremen79", "Failed to disabled " + pkg);
             }
         }
@@ -128,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Enabled " + pkg, Toast.LENGTH_SHORT).show();
                 Log.i("Bremen79", "Enabled " + pkg);
             } catch (Exception e) {
-                Toast.makeText(this, "Failed to enable " + pkg + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
+                //Toast.makeText(this, "Failed to enable " + pkg + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
                 Log.i("Bremen79", "Failed to enable " + pkg);
             }
         }

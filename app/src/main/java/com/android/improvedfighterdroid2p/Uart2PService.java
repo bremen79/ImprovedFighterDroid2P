@@ -10,19 +10,23 @@ import android.hardware.input.InputManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.InputDevice;
 import android.view.InputEvent;
 import android.view.KeyEvent;
+import android.widget.Toast;
 
-import androidx.core.app.NotificationCompat;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import android_serialport_api.SerialPort;
 
@@ -31,12 +35,16 @@ public class Uart2PService extends Service {
     private Handler handler = null;
     private long clock = SystemClock.uptimeMillis();
     //private long previousClock = SystemClock.uptimeMillis();
-    private SerialPort serialPort = null;
-    private FileOutputStream fileOutputStreamUmidokey = null;
-    private FileOutputStream fileOutputStreamSerial = null;
-    private FileInputStream fileInputStreamSerial = null;
+    private volatile boolean running;
+    private Thread readerThread;
+    private Thread syncThread;
+    // Only the reader thread accesses the device streams and updates input state.
+    private FileOutputStream fileOutputStreamUmidokey;
+    private FileOutputStream fileOutputStreamSerial;
+    private FileInputStream fileInputStreamSerial;
 
-    public static byte[] bufferUmidokey = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    private final byte[] bufferUmidokey = new byte[14];
+    private boolean hasInputState;
 
     public static final byte[][] byte2char = {new byte[]{48, 48}, new byte[]{48, 49}, new byte[]{48, 50}, new byte[]{48, 51}, new byte[]{48, 52}, new byte[]{48, 53}, new byte[]{48, 54}, new byte[]{48, 55}, new byte[]{48, 56}, new byte[]{48, 57}, new byte[]{48, 65}, new byte[]{48, 66}, new byte[]{48, 67}, new byte[]{48, 68}, new byte[]{48, 69}, new byte[]{48, 70}, new byte[]{49, 48}, new byte[]{49, 49}, new byte[]{49, 50}, new byte[]{49, 51}, new byte[]{49, 52}, new byte[]{49, 53}, new byte[]{49, 54}, new byte[]{49, 55}, new byte[]{49, 56}, new byte[]{49, 57}, new byte[]{49, 65}, new byte[]{49, 66}, new byte[]{49, 67}, new byte[]{49, 68}, new byte[]{49, 69}, new byte[]{49, 70}, new byte[]{50, 48}, new byte[]{50, 49}, new byte[]{50, 50}, new byte[]{50, 51}, new byte[]{50, 52}, new byte[]{50, 53}, new byte[]{50, 54}, new byte[]{50, 55}, new byte[]{50, 56}, new byte[]{50, 57}, new byte[]{50, 65}, new byte[]{50, 66}, new byte[]{50, 67}, new byte[]{50, 68}, new byte[]{50, 69}, new byte[]{50, 70}, new byte[]{51, 48}, new byte[]{51, 49}, new byte[]{51, 50}, new byte[]{51, 51}, new byte[]{51, 52}, new byte[]{51, 53}, new byte[]{51, 54}, new byte[]{51, 55}, new byte[]{51, 56}, new byte[]{51, 57}, new byte[]{51, 65}, new byte[]{51, 66}, new byte[]{51, 67}, new byte[]{51, 68}, new byte[]{51, 69}, new byte[]{51, 70}, new byte[]{52, 48}, new byte[]{52, 49}, new byte[]{52, 50}, new byte[]{52, 51}, new byte[]{52, 52}, new byte[]{52, 53}, new byte[]{52, 54}, new byte[]{52, 55}, new byte[]{52, 56}, new byte[]{52, 57}, new byte[]{52, 65}, new byte[]{52, 66}, new byte[]{52, 67}, new byte[]{52, 68}, new byte[]{52, 69}, new byte[]{52, 70}, new byte[]{53, 48}, new byte[]{53, 49}, new byte[]{53, 50}, new byte[]{53, 51}, new byte[]{53, 52}, new byte[]{53, 53}, new byte[]{53, 54}, new byte[]{53, 55}, new byte[]{53, 56}, new byte[]{53, 57}, new byte[]{53, 65}, new byte[]{53, 66}, new byte[]{53, 67}, new byte[]{53, 68}, new byte[]{53, 69}, new byte[]{53, 70}, new byte[]{54, 48}, new byte[]{54, 49}, new byte[]{54, 50}, new byte[]{54, 51}, new byte[]{54, 52}, new byte[]{54, 53}, new byte[]{54, 54}, new byte[]{54, 55}, new byte[]{54, 56}, new byte[]{54, 57}, new byte[]{54, 65}, new byte[]{54, 66}, new byte[]{54, 67}, new byte[]{54, 68}, new byte[]{54, 69}, new byte[]{54, 70}, new byte[]{55, 48}, new byte[]{55, 49}, new byte[]{55, 50}, new byte[]{55, 51}, new byte[]{55, 52}, new byte[]{55, 53}, new byte[]{55, 54}, new byte[]{55, 55}, new byte[]{55, 56}, new byte[]{55, 57}, new byte[]{55, 65}, new byte[]{55, 66}, new byte[]{55, 67}, new byte[]{55, 68}, new byte[]{55, 69}, new byte[]{55, 70}, new byte[]{56, 48}, new byte[]{56, 49}, new byte[]{56, 50}, new byte[]{56, 51}, new byte[]{56, 52}, new byte[]{56, 53}, new byte[]{56, 54}, new byte[]{56, 55}, new byte[]{56, 56}, new byte[]{56, 57}, new byte[]{56, 65}, new byte[]{56, 66}, new byte[]{56, 67}, new byte[]{56, 68}, new byte[]{56, 69}, new byte[]{56, 70}, new byte[]{57, 48}, new byte[]{57, 49}, new byte[]{57, 50}, new byte[]{57, 51}, new byte[]{57, 52}, new byte[]{57, 53}, new byte[]{57, 54}, new byte[]{57, 55}, new byte[]{57, 56}, new byte[]{57, 57}, new byte[]{57, 65}, new byte[]{57, 66}, new byte[]{57, 67}, new byte[]{57, 68}, new byte[]{57, 69}, new byte[]{57, 70}, new byte[]{65, 48}, new byte[]{65, 49}, new byte[]{65, 50}, new byte[]{65, 51}, new byte[]{65, 52}, new byte[]{65, 53}, new byte[]{65, 54}, new byte[]{65, 55}, new byte[]{65, 56}, new byte[]{65, 57}, new byte[]{65, 65}, new byte[]{65, 66}, new byte[]{65, 67}, new byte[]{65, 68}, new byte[]{65, 69}, new byte[]{65, 70}, new byte[]{66, 48}, new byte[]{66, 49}, new byte[]{66, 50}, new byte[]{66, 51}, new byte[]{66, 52}, new byte[]{66, 53}, new byte[]{66, 54}, new byte[]{66, 55}, new byte[]{66, 56}, new byte[]{66, 57}, new byte[]{66, 65}, new byte[]{66, 66}, new byte[]{66, 67}, new byte[]{66, 68}, new byte[]{66, 69}, new byte[]{66, 70}, new byte[]{67, 48}, new byte[]{67, 49}, new byte[]{67, 50}, new byte[]{67, 51}, new byte[]{67, 52}, new byte[]{67, 53}, new byte[]{67, 54}, new byte[]{67, 55}, new byte[]{67, 56}, new byte[]{67, 57}, new byte[]{67, 65}, new byte[]{67, 66}, new byte[]{67, 67}, new byte[]{67, 68}, new byte[]{67, 69}, new byte[]{67, 70}, new byte[]{68, 48}, new byte[]{68, 49}, new byte[]{68, 50}, new byte[]{68, 51}, new byte[]{68, 52}, new byte[]{68, 53}, new byte[]{68, 54}, new byte[]{68, 55}, new byte[]{68, 56}, new byte[]{68, 57}, new byte[]{68, 65}, new byte[]{68, 66}, new byte[]{68, 67}, new byte[]{68, 68}, new byte[]{68, 69}, new byte[]{68, 70}, new byte[]{69, 48}, new byte[]{69, 49}, new byte[]{69, 50}, new byte[]{69, 51}, new byte[]{69, 52}, new byte[]{69, 53}, new byte[]{69, 54}, new byte[]{69, 55}, new byte[]{69, 56}, new byte[]{69, 57}, new byte[]{69, 65}, new byte[]{69, 66}, new byte[]{69, 67}, new byte[]{69, 68}, new byte[]{69, 69}, new byte[]{69, 70}, new byte[]{70, 48}, new byte[]{70, 49}, new byte[]{70, 50}, new byte[]{70, 51}, new byte[]{70, 52}, new byte[]{70, 53}, new byte[]{70, 54}, new byte[]{70, 55}, new byte[]{70, 56}, new byte[]{70, 57}, new byte[]{70, 65}, new byte[]{70, 66}, new byte[]{70, 67}, new byte[]{70, 68}, new byte[]{70, 69}, new byte[]{70, 70}};
 
@@ -69,8 +77,9 @@ public class Uart2PService extends Service {
     private boolean holdP4 = false;
     private boolean holdP5 = false;
     private boolean holdP6 = false;
-    private boolean holdSTART = false;
-    private boolean holdHOME = false;
+    // The main-thread long-press callbacks also read these two flags.
+    private volatile boolean holdSTART = false;
+    private volatile boolean holdHOME = false;
 
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
 
@@ -84,6 +93,8 @@ public class Uart2PService extends Service {
     @Override // android.app.Service
     public void onCreate() {
         super.onCreate();
+        handler = new Handler(Looper.getMainLooper());
+        startMyOwnForeground();
 
         // The injectInputEvent cannot be accessed normally, so we use Reflection to do it
         // see https://www.pocketmagic.net/injecting-events-programatically-on-android/
@@ -97,24 +108,25 @@ public class Uart2PService extends Service {
             // Get the injectInputEvent method
             injectInputEventMethod = inputManagerClass.getMethod("injectInputEvent", InputEvent.class, int.class);
 
-            handler = new Handler();
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-                 InvocationTargetException e) {
-            e.printStackTrace();
+                 InvocationTargetException | RuntimeException e) {
+            reportFailure("Cannot initialize input injection", e);
+            return;
         }
         Log.d("Bremen79", "Service created");
-        startMyOwnForeground();
     }
 
 
     // https://androidwave.com/foreground-service-android-example/
     private void startMyOwnForeground() {
         createNotificationChannel();
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+        Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? new Notification.Builder(this, CHANNEL_ID) : new Notification.Builder(this);
+        Notification notification = builder
                 .setContentTitle("ImprovedFighterDroid2P "+BuildConfig.VERSION_NAME+" is running in background")
                 .setPriority(1)
                 .setOngoing(true)
-                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
         startForeground(2, notification);
     }
@@ -137,9 +149,8 @@ public class Uart2PService extends Service {
         int[] deviceIds = inputManager.getInputDeviceIds();
 
         for (int deviceId : deviceIds) {
-            String name = inputManager.getInputDevice(deviceId).getName();
-
-            if (name.equals(deviceName)) {
+            InputDevice device = inputManager.getInputDevice(deviceId);
+            if (device != null && deviceName.equals(device.getName())) {
                 return deviceId;
             }
         }
@@ -148,36 +159,34 @@ public class Uart2PService extends Service {
         return -1;
     }
 
-    private void readSerialPort(){
+    private void readSerialPort() {
         try {
             Log.d("Bremen79", "Trying to open serial port");
-            serialPort = new SerialPort(new File("/dev/ttyS1"));
+            SerialPort serialPort = new SerialPort(new File("/dev/ttyS1"));
+            // version for BigBlue
+            //serialPort = new SerialPort(new File("/dev/ttyMT2"));
+            fileOutputStreamSerial = serialPort.mFileOutputStream;
+            fileInputStreamSerial = serialPort.mFileInputStream;
             Log.d("Bremen79", "Serial port opened");
             Log.d("Bremen79", "Trying to open umidokey device");
-            fileOutputStreamUmidokey = new FileOutputStream("/dev/umidokey");
+            File umidokeyDevice = new File("/dev/umidokey");
+            if (!umidokeyDevice.exists()) throw new IOException("Missing device: /dev/umidokey");
+            fileOutputStreamUmidokey = new FileOutputStream(umidokeyDevice);
             Log.d("Bremen79", "umidokey device opened");
-        } catch (IOException unused) {
-        } catch (SecurityException e2) {
-            e2.printStackTrace();
-        }
+            idDevice = findInputDeviceIdByName(BuildConfig.DEVICE_NAME);
+            if (idDevice == -1 && !"Virtual".equals(BuildConfig.DEVICE_NAME)) {
+                throw new IOException("Input device not found: " + BuildConfig.DEVICE_NAME);
+            }
+            Log.d("Bremen79", String.valueOf(idDevice));
 
-        fileOutputStreamSerial = serialPort.mFileOutputStream;
-        fileInputStreamSerial = serialPort.mFileInputStream;
-
-        idDevice = findInputDeviceIdByName(BuildConfig.DEVICE_NAME);
-        Log.d("Bremen79", String.valueOf(idDevice));
-
-        try {
-            while (true) {
+            byte[] bArr = new byte[128];
+            while (running) {
                 clock = SystemClock.uptimeMillis();
                 fileOutputStreamSerial.write(queryCommand);
-                if (fileInputStreamSerial != null) {
-                    byte[] bArr = new byte[128];
-                    int read = fileInputStreamSerial.available() != 0 ? fileInputStreamSerial.read(bArr) : 0;
-                    if (read > 0) {
-                        //Log.d("Bremen79", String.format("Read %d bytes from serial port", read));
-                        writeUmidokey(bArr);
-                    }
+                int read = fileInputStreamSerial.available() != 0 ? fileInputStreamSerial.read(bArr) : 0;
+                if (read >= 11) {
+                    //Log.d("Bremen79", String.format("Read %d bytes from serial port", read));
+                    writeUmidokey(bArr);
                 }
                 // We are aiming at polling the state of the joystick every 16ms, that is at 62.5Hz
                 // So, if the processing took more than 16ms, we skip the sleep.
@@ -186,13 +195,23 @@ public class Uart2PService extends Service {
                 if (timeSleep>0)
                     Thread.sleep(timeSleep);
             }
-        } catch (IOException | InterruptedException e) {
-            e.getMessage();
-            e.printStackTrace();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (IOException | RuntimeException | LinkageError e) {
+            if (running) reportFailure("Controller driver stopped", e);
+        } finally {
+            running = false;
+            // The current packet has finished: no more key-down events can follow cleanup.
+            try {
+                releaseInputs();
+            } finally {
+                closeStreams();
+            }
         }
     }
 
-    public final void writeUmidokey(byte[] serialBytes) {
+    // The reader calls this only after receiving at least 11 bytes.
+    private void writeUmidokey(byte[] serialBytes) throws IOException {
         // the first 2 bytes should be 'A710'
         if (serialBytes[0] != (byte) 0xA7 || serialBytes[1] != (byte) 0x10) return;
 
@@ -217,28 +236,26 @@ public class Uart2PService extends Service {
         bufferUmidokey[12] = byte2char[serialBytes[2] & 255][0];
         bufferUmidokey[13] = byte2char[serialBytes[2] & 255][1];
 
-        try {
-            fileOutputStreamUmidokey.write(bufferUmidokey, 0, 14);
-            //Log.d("Bremen79", String.format("%d %d %d %d %d %d", serialBytes[0], serialBytes[1], serialBytes[2], serialBytes[3], serialBytes[4], serialBytes[5]));
-            if ((serialBytes[4] & 16)!=0) {
-                if (!holdHOME) {
-                    //Log.d("Bremen79", "HOME key timer started");
-                    holdHOME = true;
-                    handler.postDelayed(mLongPressed, 3000);
-                }
-            } else if (holdHOME) {
-                //Log.d("Bremen79", "HOME key timer stopped");
-                holdHOME = false;
-                handler.removeCallbacks(mLongPressed);
+        hasInputState = true;
+        fileOutputStreamUmidokey.write(bufferUmidokey, 0, 14);
+        //Log.d("Bremen79", String.format("%d %d %d %d %d %d %d %d %d %d %d %d %d %d", serialBytes[0], serialBytes[1], serialBytes[2], serialBytes[3], serialBytes[4], serialBytes[5], serialBytes[6], serialBytes[7], serialBytes[8], serialBytes[9], serialBytes[10], serialBytes[11], serialBytes[12], serialBytes[13]));
+        if ((serialBytes[4] & 16)!=0) {
+            if (!holdHOME) {
+                //Log.d("Bremen79", "HOME key timer started");
+                holdHOME = true;
+                handler.postDelayed(mLongPressedHome, 3000);
             }
-            emulateP2(serialBytes[8], serialBytes[9]);
-        } catch (Exception e2) {
-            e2.toString();
+        } else if (holdHOME) {
+            //Log.d("Bremen79", "HOME key timer stopped");
+            holdHOME = false;
+            handler.removeCallbacks(mLongPressedHome);
         }
+        emulateP2(serialBytes[8], serialBytes[9]);
     }
 
-    private Runnable mLongPressed = new Runnable() {
+    private Runnable mLongPressedHome = new Runnable() {
         public void run() {
+            if (!running || !holdHOME) return;
             //Log.d("Bremen79", "Sending HOME key event");
             Intent intent = new Intent(Intent.ACTION_MAIN);
             intent.addCategory(Intent.CATEGORY_HOME);
@@ -246,6 +263,34 @@ public class Uart2PService extends Service {
             startActivity(intent);
         }
     };
+
+    private Runnable mLongPressedStart = new Runnable() {
+        public void run() {
+            if (!running || !holdSTART || (syncThread != null && syncThread.isAlive())) return;
+            syncThread = new Thread(() -> {
+                Process process = null;
+                try {
+                    process = Runtime.getRuntime().exec(new String[] { "sync" });
+                    int code = process.waitFor();
+                    if (code == 0) {
+                        showSyncResult("Storage synced.");
+                    } else {
+                        Log.e("Bremen79", "sync failed with exit code " + code);
+                        showSyncResult("Storage sync failed (exit code " + code + ").");
+                    }
+                } catch (IOException | SecurityException e) {
+                    Log.e("Bremen79", "sync failed", e);
+                    showSyncResult("Storage sync failed: " + e.getMessage());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    if (process != null) process.destroy();
+                }
+            }, "StorageSync");
+            syncThread.start();
+        }
+    };
+
     private void emulateP2(byte i, byte i2) {
         //Log.d("Bremen79", String.format("%d %d %d %d %d %d %d %d %d %d", bArr[0], bArr[1], bArr[2], bArr[3], bArr[4],bArr[5], bArr[6], bArr[7], bArr[8], bArr[9]));
         //Log.d("Bremen79", String.format("%d %d", i, i2));
@@ -255,40 +300,36 @@ public class Uart2PService extends Service {
                 pressKeyEvent(BuildConfig.UP_KEY);
                 holdUP = true;
             }
-        } else {
-            if (holdUP) {
-                releaseKeyEvent(BuildConfig.UP_KEY);
-                holdUP = false;
+        } else if (holdUP) {
+            releaseKeyEvent(BuildConfig.UP_KEY);
+            holdUP = false;
+        }
+        if ((i & DOWN) != 0) {
+            if (!holdDOWN) {
+                pressKeyEvent(BuildConfig.DOWN_KEY);
+                holdDOWN = true;
             }
-            if ((i & DOWN) != 0) {
-                if (!holdDOWN) {
-                    pressKeyEvent(BuildConfig.DOWN_KEY);
-                    holdDOWN = true;
-                }
-            } else if (holdDOWN) {
-                releaseKeyEvent(BuildConfig.DOWN_KEY);
-                holdDOWN = false;
-            }
+        } else if (holdDOWN) {
+            releaseKeyEvent(BuildConfig.DOWN_KEY);
+            holdDOWN = false;
         }
         if ((i & LEFT) != 0) {
             if (!holdLEFT) {
                 pressKeyEvent(BuildConfig.LEFT_KEY);
                 holdLEFT = true;
             }
-        } else {
-            if (holdLEFT) {
-                releaseKeyEvent(BuildConfig.LEFT_KEY);
-                holdLEFT = false;
+        } else if (holdLEFT) {
+            releaseKeyEvent(BuildConfig.LEFT_KEY);
+            holdLEFT = false;
+        }
+        if ((i & RIGHT) != 0) {
+            if (!holdRIGHT) {
+                pressKeyEvent(BuildConfig.RIGHT_KEY);
+                holdRIGHT = true;
             }
-            if ((i & RIGHT) != 0) {
-                if (!holdRIGHT) {
-                    pressKeyEvent(BuildConfig.RIGHT_KEY);
-                    holdRIGHT = true;
-                }
-            } else if (holdRIGHT) {
-                releaseKeyEvent(BuildConfig.RIGHT_KEY);
-                holdRIGHT = false;
-            }
+        } else if (holdRIGHT) {
+            releaseKeyEvent(BuildConfig.RIGHT_KEY);
+            holdRIGHT = false;
         }
         if ((i2 & P1) != 0) {
             if (!holdP1) {
@@ -348,40 +389,120 @@ public class Uart2PService extends Service {
             if (!holdSTART) {
                 pressKeyEvent(BuildConfig.START_KEY);
                 holdSTART = true;
+                handler.postDelayed(mLongPressedStart, 3000);
             }
         } else if (holdSTART) {
             releaseKeyEvent(BuildConfig.START_KEY);
             holdSTART = false;
+            handler.removeCallbacks(mLongPressedStart);
         }
     }
 
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         Log.d("Bremen79", "Start command received");
-        new Thread(this::readSerialPort).start();
+        if (inputManager == null || injectInputEventMethod == null) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        if (readerThread == null) {
+            running = true;
+            readerThread = new Thread(this::readSerialPort, "EncoderReader");
+            readerThread.start();
+        }
         return START_STICKY;
     }
 
     @Override // android.app.Service
     public final void onDestroy() {
         Log.d("Bremen79", "Service onDestroy");
-        try {
-            if (fileInputStreamSerial != null) {
-                fileInputStreamSerial.close();
-                Log.d("Bremen79", "Closed input serial");
+        running = false;
+        handler.removeCallbacks(mLongPressedHome);
+        handler.removeCallbacks(mLongPressedStart);
+        if (syncThread != null) syncThread.interrupt();
+        if (readerThread != null) {
+            readerThread.interrupt();
+            try {
+                readerThread.join(1000);
+                if (readerThread.isAlive()) {
+                    Log.e("Bremen79", "Encoder reader is still stopping; device I/O may be blocked");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-            if (fileOutputStreamSerial!= null) {
-                fileOutputStreamSerial.close();
-                Log.d("Bremen79", "Closed output serial");
-            }
-            if (fileOutputStreamUmidokey!= null) {
-                fileOutputStreamUmidokey.close();
-                Log.d("Bremen79", "Closed output umidokey");
-            }
-        } catch (Exception ignored) {
         }
         stopForeground(true);
         super.onDestroy();
+    }
+
+    private void reportFailure(String message, Throwable error) {
+        running = false;
+        Log.e("Bremen79", message, error);
+        handler.post(() -> {
+            Toast.makeText(this, message + ": " + error.getMessage(), Toast.LENGTH_LONG).show();
+            stopSelf();
+        });
+    }
+
+    private void showSyncResult(String message) {
+        handler.post(() -> {
+            if (running) Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    // Called only by the reader thread, after it has finished processing input.
+    private void releaseInputs() {
+        handler.removeCallbacks(mLongPressedHome);
+        handler.removeCallbacks(mLongPressedStart);
+        int[] heldKeys = {
+                holdUP ? BuildConfig.UP_KEY : -1, holdDOWN ? BuildConfig.DOWN_KEY : -1,
+                holdLEFT ? BuildConfig.LEFT_KEY : -1, holdRIGHT ? BuildConfig.RIGHT_KEY : -1,
+                holdP1 ? BuildConfig.P1_KEY : -1, holdP2 ? BuildConfig.P2_KEY : -1,
+                holdP3 ? BuildConfig.P3_KEY : -1, holdP4 ? BuildConfig.P4_KEY : -1,
+                holdP5 ? BuildConfig.P5_KEY : -1, holdP6 ? BuildConfig.P6_KEY : -1,
+                holdSTART ? BuildConfig.START_KEY : -1
+        };
+        clock = SystemClock.uptimeMillis();
+        for (int key : heldKeys) {
+            if (key == -1) continue;
+            try {
+                releaseKeyEvent(key);
+            } catch (RuntimeException e) {
+                Log.e("Bremen79", "Cannot release key " + key, e);
+            }
+        }
+        holdUP = holdDOWN = holdLEFT = holdRIGHT = false;
+        holdP1 = holdP2 = holdP3 = holdP4 = holdP5 = holdP6 = false;
+        holdSTART = holdHOME = false;
+        if (hasInputState) {
+            try {
+                // Release buttons and directions without changing the last volume value.
+                Arrays.fill(bufferUmidokey, 0, 12, (byte) '0');
+                fileOutputStreamUmidokey.write(bufferUmidokey);
+            } catch (IOException e) {
+                Log.e("Bremen79", "Cannot reset umidokey state", e);
+            }
+        }
+        hasInputState = false;
+    }
+
+    private void closeStreams() {
+        closeStream(fileInputStreamSerial);
+        closeStream(fileOutputStreamSerial);
+        closeStream(fileOutputStreamUmidokey);
+        fileInputStreamSerial = null;
+        fileOutputStreamSerial = null;
+        fileOutputStreamUmidokey = null;
+    }
+
+    private void closeStream(Closeable stream) {
+        if (stream == null) return;
+        try {
+            stream.close();
+        } catch (IOException e) {
+            Log.e("Bremen79", "Cannot close controller stream", e);
+        }
     }
 
     // Should I implement an on task removed method?
@@ -389,22 +510,24 @@ public class Uart2PService extends Service {
 
     private void pressKeyEvent(int keyCode) {
         try {
-            injectInputEventMethod.invoke(inputManager, new KeyEvent(clock, clock, KeyEvent.ACTION_DOWN, keyCode, 0, 0,
+            Object result = injectInputEventMethod.invoke(inputManager, new KeyEvent(clock, clock, KeyEvent.ACTION_DOWN, keyCode, 0, 0,
                             idDevice, 0, 0, 1),
                     0);
+            if (Boolean.FALSE.equals(result)) throw new IllegalStateException("Key press injection failed");
         } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Cannot inject key press", e);
         }
         //Log.d("Bremen79", String.format("Keypress down sent, response time: %d ms", SystemClock.uptimeMillis() - clock));
     }
 
     private void releaseKeyEvent(int keyCode) {
         try {
-            injectInputEventMethod.invoke(inputManager,new KeyEvent(clock, clock, KeyEvent.ACTION_UP, keyCode, 0, 0,
+            Object result = injectInputEventMethod.invoke(inputManager,new KeyEvent(clock, clock, KeyEvent.ACTION_UP, keyCode, 0, 0,
                             idDevice, 0, 0, 1),
                     0);
+            if (Boolean.FALSE.equals(result)) throw new IllegalStateException("Key release injection failed");
         } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Cannot inject key release", e);
         }
         //Log.d("Bremen79", String.format("Keypress up sent, response time: %d ms", SystemClock.uptimeMillis() - clock));
     }
